@@ -1,9 +1,17 @@
 <?php
 
-include 'src/Action/ActionInterface.php';
+include __DIR__ . "/src/Action/ActionInterface.php";
+include __DIR__ . "/src/VendingMachineInterface.php";
+use VendingMachine\Action\ActionInterface;
+use VendingMachine\VendingMachineInterface;
+use VendingMachine\Response\ResponseInterface;
+use VendingMachine\Item\ItemCodeInterface;
+use VendingMachine\Item\ItemInterface;
+use VendingMachine\Money\MoneyCollectionInterface;
+use VendingMachine\Money\MoneyInterface;
 
 
-class Input extends Action{
+class Input extends Action Implements ActionInterface{
 
     use VendingMachine;
     use Item;
@@ -17,7 +25,7 @@ class Input extends Action{
     protected function getAction()
     {
         $this->getMoneyCollection();
-        $this->input = readline("\r\nINPUT:");
+        $this->input = readline("INPUT: ");
         $this->getName();
     }
 
@@ -27,9 +35,13 @@ class Input extends Action{
     }
     protected function getMoneyCollection()
     {
-        echo "\r\nyour balance: " . "$this->amount ";
+        echo "your balance: " . "$this->amount ";
         $this->merge();
     }
+    public function handle(VendingMachineInterface $vendingMachine): ResponseInterface{
+        $this->__toString();
+    }
+
 }
 
 trait Item{
@@ -43,6 +55,11 @@ trait Item{
         $this->B = 1;
         $this->C = 1.60;
 
+    }
+    public function alertItem()
+    {
+        echo "Incorrect Item\r\n";
+        $this->getAction();
     }
     
     protected function getCount()
@@ -73,9 +90,10 @@ trait Item{
                     break;
                 }
                 else
-                    $this->errorMoney();
+                    $this->alertMoney();
                     break;
             } 
+            $this->cash = array();
             $this->getInput();
     }
 }
@@ -101,58 +119,65 @@ trait Money{
     }
     protected function merge()
     {   
-        echo'(';
+        echo"(";
         foreach ($this->cash as $sad) {
-            echo $sad . ", ";
+            echo $sad . ",";
         }
-        echo')';
+        echo")\r\n";
     }
+
     protected function toArray()
     {
-        $this->cash = $this->input;
+        $this->cash[] = $this->input;
+    }
+
+    protected function getValue()
+    {
+        return $this->amount;
     }
 }
 trait VendingMachine{
-    public function errorMoney()
+    public function alertMoney()
     {
         echo "no enought money";
     }
 
-    protected function addItem(){
+    public function addItem(){
         $this->getPrice();
         $this->getCount();
     }
 
-    protected function dropItem(){
-        echo substr($this->input,4);
+    public function dropItem(){
+        echo substr($this->input,4) . "\r\n";
     }
 
-    protected function insertMoney(){
-        
+    public function insertMoney(): void{
         $this->add();
         $this->getInput();
+        return;
     }
 
-    protected function getCurrentTransactionMoney(){
+    public function getCurrentTransactionMoney(){
         
         if($this->amount != 0){
             $this->getInsertedMoney();
         }
         else
-            echo "You haven't enought money";
+            $this->alertMoney();
     }
 
-    protected function getInsertedMoney(){        
+    public function getInsertedMoney(){        
         
         echo "You recived " . "$this->amount";
+        $this->merge();
         $this->amount = 0;
-        echo("$this->amount");
+        $this->cash = array();
     }
 }
 
 class Action{
 
-    protected function getName()
+    public function getName() : string
     {
         switch($this->input){
             case 'GET-A':
@@ -173,9 +198,10 @@ class Action{
                 break;
 
             default:
-                echo "sorry, I can't see";
+                $this->alertItem();
                 break;
         }
+        return "stop";
     }
 }
 
